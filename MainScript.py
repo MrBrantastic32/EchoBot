@@ -7,12 +7,16 @@ import openai
 from dotenv import load_dotenv
 import os
 import asyncio
+import tensorflow as tf
+
+###-Suppress TensorFlow warnings-###
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 ###-Load env-###
 
 load_dotenv()
 Discord_Token = os.getenv('Discord_API_Token')
-
 
 ###-Main Setup-###
 
@@ -27,6 +31,7 @@ class EchoAI(commands.Bot):
         print("Bot Online!")
         print("------------------------------")
         print(f"Logged in as {self.user} (ID: {self.user.id})")
+        await bot.tree.sync()
 
 bot = EchoAI()
 
@@ -41,7 +46,10 @@ async def load_cogs():
                 logging.error(f"{extension} couldn't be loaded.")
                 traceback.print_exc()
 
+async def main():
+    async with bot:
+        await load_cogs()
+        print('cog loaded successfully')
+        await bot.start(Discord_Token)
 
-
-load_cogs()
-bot.run(Discord_Token)
+asyncio.run(main())
