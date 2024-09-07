@@ -13,8 +13,15 @@ class ChatCog(commands.Cog):
     @discord.app_commands.command(name="chat", description="Generate responses from AI")
     async def generate(self, interaction: discord.Interaction, prompt: str):
         await interaction.response.defer()
-        response = self.generator(prompt, max_length=50, num_return_sequences=1, truncation=True)
-        await interaction.followup.send_message(response[0]['generated_text'])  
+        print("Deffered response, generating responses...")
+        try:
+            response = self.generator(prompt, max_length=50, num_return_sequences=1, truncation=True)
+            generated_text = response[0]['generated_text']
+            print("Generated text:", generated_text)  
+            await interaction.followup.send(generated_text) 
+        except Exception as e:
+            print("Error generating text:", e)  
+            await interaction.followup.send("Sorry, something went wrong while generating the response.") 
 
 async def setup(bot):
     print('cog added')
