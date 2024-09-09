@@ -1,33 +1,31 @@
 import discord
 from discord.ext import commands
-from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
-from datasets import load_dataset
+from transformers import pipeline
+import tensorflow as tf
 
-###-Creating Chat Cog-###
+###-Creating the Chat_Cog-###
 
-class ChatCog(commands.Cog):
+class ChatCog(commands.Cog):  
     def __init__(self, bot):
         self.bot = bot
-        self.tokenizer = AutoTokenizer.from_pretrained("./trained_model")
-        self.model = AutoModelForCausalLM.from_pretrained("./trained_model")
+        self.generator = pipeline('text-generation', model='gpt2', pad_token_id = 50256)  
 
-###-Generating the response-###
 
-    def generate_response(self, input_text):
-        inputs = self.tokenizer.encode(input_text + self.tokenizer.eos_token, return_tensors="pt")
-        outputs = self.model.generate(inputs, max_length=1000, pad_token_id=self.tokenizer.eos_token_id)
-        response = self.tokenizer.decode(outputs[:, inputs.shape[-1]:][0], skip_special_tokens=True)
-        return response
 
-###-Creating the command-###
+    @discord.app_commands.command(name="chat", description="Generate responses from AI")
+    async def generate(self, interaction: discord.Interaction, prompt: str):
+        await interaction.response.defer()
+        print("Deffered response, generating responses...")
+        try:
+            response = self.generator(prompt, max_length=50, num_return_sequences=1, truncation=True)
+            generated_text = response[0]['generated_text']
+            print("Generated text:", generated_text)  
+            await interaction.followup.send(generated_text) 
+        except Exception as e:
+            print("Error generating text:", e)  
+            await interaction.followup.send("Sorry, something went wrong while generating the response.")  
 
-    @commands.command(name='chat')
-    async def chat(self, ctx, *, user_input: str):
-        response = self.generate_response(user_input)
-        await ctx.send(response)
-
-###-Uploading the cog-###
 
 async def setup(bot):
-    print("cog added")
+    print('cog added')
     await bot.add_cog(ChatCog(bot))
