@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import tensorflow as tf
+from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+from datasets import load_dataset
 
 ###-Suppress TensorFlow warnings-###
 
@@ -46,10 +48,42 @@ async def load_cogs():
                 logging.error(f"{extension} couldn't be loaded.")
                 traceback.print_exc()
 
+###-Training AI model-###
+
+async def train_model():
+    model_name =  "microsoft/DialoGPT-medium"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+
+    dataset = load_dataset("daily_dialog")
+
+    training_args =  TrainingArguments(
+        output_dir="./results",
+        num_train_epochs=3,
+        per_device_train_batch_size=4,
+        save_steps=10_000,
+        save_total_limit=2,
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=dataset["train"],
+        eval_dataset=dataset["validation"],
+    )
+
+    trainer.train()
+    model.save_pretrained("./trained_model")
+    tokenizer.save_pretrained("./trained_model")
+
+
+###-Running Bot-###
+
 async def main():
     async with bot:
         await load_cogs()
         print('cog loaded successfully')
+        await train_model()
         await bot.start(Discord_Token)
 
 asyncio.run(main())
