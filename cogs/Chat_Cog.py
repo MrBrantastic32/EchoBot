@@ -19,8 +19,17 @@ class ChatCog(commands.Cog):
         try:
             response = self.generator(prompt, max_length=50, num_return_sequences=1, truncation=True)
             generated_text = response[0]['generated_text']
-            print("Generated text:", generated_text)  
-            await interaction.followup.send(generated_text) 
+            print("Generated text:", generated_text) 
+
+###-Creating an Embed-###
+
+            embed = discord.Embed(title = "Echo Response", 
+                                  description = generated_text, 
+                                  color = discord.Color.purple())
+            embed.set_author(name=f"{interaction.user.display_name}: {prompt}",
+                              icon_url=interaction.user.display_avatar.url)
+            
+            await interaction.followup.send(embed=embed) 
         except Exception as e:
             print("Error generating text:", e)  
             await interaction.followup.send("Sorry, something went wrong while generating the response.")  
