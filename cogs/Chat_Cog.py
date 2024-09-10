@@ -2,13 +2,22 @@ import discord
 from discord.ext import commands
 from transformers import pipeline
 import tensorflow as tf
+import re
 
 ###-Creating the Chat_Cog-###
 
 class ChatCog(commands.Cog):  
     def __init__(self, bot):
         self.bot = bot
-        self.generator = pipeline('text-generation', model='gpt2', pad_token_id = 50256)  
+        self.generator = pipeline('text-generation', model='gpt2', pad_token_id = 50256, eos_token_id = 50256)  
+
+###-Truncating sentence-###
+
+    def truncate_to_sentence(self, text):
+        match = re.search(r'(.*?)([.!?])(\s|$)', text[::-1])
+        if match:
+            return text[:len(text) - match.end()]
+        return text
 
 
 
@@ -17,9 +26,15 @@ class ChatCog(commands.Cog):
         await interaction.response.defer()
         print("Deffered response, generating responses...")
         try:
-            response = self.generator(prompt, max_length=50, num_return_sequences=1, truncation=True)
+            response = self.generator(prompt, max_length=100, min_length=1, num_return_sequences=1, 
+                          no_repeat_ngram_size=2, top_p=0.9, temperature=1, early_stopping=True)
             generated_text = response[0]['generated_text']
-            print("Generated text:", generated_text) 
+             
+
+###-Post Processing the text-###
+            generated_text = self.truncate_to_sentence(generated_text)
+            print("Generated text:", generated_text)
+
 
 ###-Creating an Embed-###
 
